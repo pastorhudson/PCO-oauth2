@@ -1,56 +1,59 @@
 #!/usr/bin/env python3
 # Install dependencies with:
-# pip install flask requests requests_oauth2
+# pip install -r requirements.txt
+# You need to put your Client ID and Secret in environment variables PCO_CLIENT_ID & PCO_CLIENT_SECRET respectively
+# You also need to add http://localhost:5000/auth/callback as your callback uri
 import os
 import logging
 import requests
+from requests_oauth2.services import PlanningCenterClient
 
-from requests_oauth2.services import GoogleClient
 from requests_oauth2 import OAuth2BearerToken
-from flask import Flask, request, redirect, session
+from flask import Flask, request, redirect, session, jsonify
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(20)
+# You need to put your Client ID and Secret in environment variables PCO_CLIENT_ID & PCO_CLIENT_SECRET respectively
+app.client_id = os.environ["PCO_CLIENT_ID"]
+app.secret_key = os.environ["PCO_CLIENT_SECRET"]
 
-
-google_auth = GoogleClient(
-    client_id=("554229061086-np1qvffgq6gi1f6njg99qkeqt4h2gaut"
-               ".apps.googleusercontent.com"),
-    client_secret="XqTsoS6DXq-W0KgTqvQISBOM",
-    redirect_uri="http://localhost:5000/google/oauth2callback",
+pco_auth = PlanningCenterClient(
+    client_id=app.client_id,
+    client_secret=app.secret_key,
+    redirect_uri='http://localhost:5000/auth/callback'
 )
 
 
 @app.route("/")
 def index():
-    return redirect("/google/")
+    return redirect("/pco/")
 
 
-@app.route("/google/")
-def google_index():
+@app.route("/pco/")
+def pco_index():
+    info = ""
     if not session.get("access_token"):
-        return redirect("/google/oauth2callback")
+        return redirect("/auth/callback")
     with requests.Session() as s:
         s.auth = OAuth2BearerToken(session["access_token"])
-        r = s.get("https://www.googleapis.com/plus/v1/people/me")
+        r = s.get("https://api.planningcenteronline.com/people/v2/people")
     r.raise_for_status()
     data = r.json()
-    return "Hello, {}!".format(data["displayName"])
+    return jsonify(data)
 
 
-@app.route("/google/oauth2callback")
-def google_oauth2callback():
+@app.route("/auth/callback")
+def pco_oauth2callback():
     code = request.args.get("code")
     error = request.args.get("error")
     if error:
         return "error :( {!r}".format(error)
     if not code:
-        return redirect(google_auth.authorize_url(
-            scope=["profile", "email"],
+        return redirect(pco_auth.authorize_url(
+            scope=["people", "services", "check_ins", "resources"],
             response_type="code",
         ))
-    data = google_auth.get_token(
+    data = pco_auth.get_token(
         code=code,
         grant_type="authorization_code",
     )

@@ -1,92 +1,91 @@
-# requests-oauth2
+# PCO-oauth2
 
-[![PyPI](https://img.shields.io/pypi/v/requests-oauth2.svg)](https://pypi.python.org/pypi/requests-oauth2)
 
-OAuth v2.0 support for
+OAuth v2.0 Example using 
 [kennethreitz](https://github.com/kennethreitz)'s well-known
 [Requests](https://github.com/kennethreitz/requests) library.
+This is a slightly modified version of [Miguel Araujo's](https://github.com/maraujop/requests-oauth2)
+requests-oauth2. 
 
-This library wants to provide the simplest and easiest way to do
-OAuth2 in Python. OAuth2 is much easier to do than old OAuth1.0, and
-likewise this library is simple, free of cruft, and practical in
-everyday use. If you are looking for a way of doing OAuth 1.0, see
-[requests-oauth](https://github.com/maraujop/requests-oauth).
+This library provides a demonstration of authenticating with 
+Planning Center Online using Oauth 2.0
 
 Authors: see [AUTHORS](/AUTHORS).
 
 License: BSD
 
-Examples: with [Flask](/examples/web_flask.py).
+Example: with [Flask](/examples/web_flask.py).
 
 ## OAuth2 web app flow - the theory
 
 Skip this if you know how OAuth2 works.
 
-1. Your web app (*Foo*) allows users to log in with their *Qux*
-   account. *Qux* here is a service provider; they gave you a **client
+1. Your web app (*Foo*) allows users to log in with their *Planning Center Online(PCO)*
+   account. *Planning Center Online* gave you a **client
    ID** and a **secret key**, which *Foo* stores somewhere on the
-   backend. *Qux* and *Foo* pre-agree on some **redirect URI**.
+   backend. *PCO* and *Foo* pre-agree on some **redirect URI**.
 2. User visits *Foo*'s login screen, e.g.
    `https://www.foo.example/login`
 3. *Foo* redirects users to *Qux*'s **Authorization URL**, e.g.
-   `https://api.qux.example/oauth/authorize`
-4. User is presented with *Qux*'s **consent screen**, where they
+   `https://api.planningcenteronline.com/oauth/authorize`
+4. User is presented with *PCO*'s **consent screen**, where they
    review the **scope** of requested permissions, and either allow or
    deny access.
-5. Once access is granted, *Qux* redirects back to *Foo* via the
+5. Once access is granted, *PCO* redirects back to *Foo* via the
    **redirect URI** that they both agreed upon beforehand, supplying
    the **code**.
 6. *Foo* exchanges the **code** for an **access token**. The access
-   token can be used by *Foo* to make API calls to *Qux* on user's
+   token can be used by *Foo* to make API calls to *PCO* on user's
    behalf.
 
 ## Usage example
 
-Look into the [examples directory](/examples) for fully integrated,
-working examples.
+Look into the [examples directory](/examples) for a fully integrated,
+working example.
 
-Some providers are included out of the box, but adding more is quite
-easy. In this example, we'll get started with Google.
-
-You will find **Client ID** & **secret** (point 1 above) in your
-[Google API console](https://console.cloud.google.com/apis/credentials).
+You will find **Client ID** & **secret** (point 1 above) in
+[My Developer Applications](https://api.planningcenteronline.com/oauth/applications).
 
 You must choose the **redirect URI**, which must be handled by your
-web app.
+web app. For the example to work you need to add http://localhost:5000
 
 ```python
-from requests_oauth2.services import GoogleClient
-google_auth = GoogleClient(
-    client_id="your-google-client-id",
-    client_secret="super-secret",
-    redirect_uri="http://localhost:5000/google/oauth2callback",
+import os
+from requests_oauth2.services import PlanningCenterClient
+# You need to put your Client ID and Secret in environment variables PCO_CLIENT_ID & PCO_CLIENT_SECRET respectively
+app.client_id = os.environ["PCO_CLIENT_ID"]
+app.secret_key = os.environ["PCO_CLIENT_SECRET"]
+pco_auth = PlanningCenterClient(
+    client_id=app.client_id, 
+    client_secret=app.secret_key,
+    redirect_uri='http://localhost:5000/auth/callback'
 )
 ```
 
 When the user visits the login page (point 2), we'll build an
-**authorization URL** (point 3) that will direct the user to Google's
+**authorization URL** (point 3) that will direct the user to PCO's
 **consent screen**, asking to grant the specified **scopes** (point
 4):
 
 ```python
-authorization_url = google_auth.authorize_url(
-    scope=["email"],
+authorization_url = pco_auth.authorize_url(
+    scope=["people", "services", "check_ins", "resources"],
     response_type="code",
 )
 ```
 
-Once the user clicks "allow", Google will redirect them to the
+Once the user clicks "allow", PCO will redirect them to the
 **redirect URI** (point 5), which will include the **code** as one of
 the query string parameters:
 
-    http://localhost:5000/google/oauth2callback?code=...
+    http://localhost:5000/pco/oauth2callback?code=...
 
 The code will be used to request an **access token** (point 6),
 necessary for all following requests to the API:
 
 ```python
 code = get_request_parameter("code")  # this depends on your web framework!
-data = google_auth.get_token(
+data = pco_auth.get_token(
     code=code,
     grant_type="authorization_code",
 )
@@ -100,7 +99,7 @@ session["access_token"] = data["access_token"]
 ```
 
 The exact method for supplying the **access token** varies from one
-provider to another. One popular method (supported by Google) is via
+provider to another. One popular method (supported by PCO) is via
 the Bearer header. There's a helper shortcut for this:
 
 ```python
@@ -108,21 +107,7 @@ from requests_oauth2 import OAuth2BearerToken
 
 with requests.Session() as s:
     s.auth = OAuth2BearerToken(access_token)
-    r = s.get("https://www.googleapis.com/plus/v1/people/me")
-    r.raise_for_status()
-    data = r.json()
-```
-
-Other providers, such as Facebook, allow the access token to be passed
-as a request parameter (in the query string). You would so something
-like this:
-
-```python
-from requests_oauth2 import OAuth2BearerToken
-
-with requests.Session() as s:
-    s.params = {"access_token": response["access_token"]}
-    r = s.get("https://graph.facebook.com/me")
+    r = s.get("https://api.planningcenteronline.com/people/v2/people")
     r.raise_for_status()
     data = r.json()
 ```
