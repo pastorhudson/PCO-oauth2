@@ -1,14 +1,14 @@
 # PCO-oauth2
 
 
-OAuth v2.0 Example using 
+OAuth v2.0 Planning Center Online Example using 
 [kennethreitz](https://github.com/kennethreitz)'s well-known
 [Requests](https://github.com/kennethreitz/requests) library.
 This is a slightly modified version of [Miguel Araujo's](https://github.com/maraujop/requests-oauth2)
 requests-oauth2. 
 
 This library provides a demonstration of authenticating with 
-Planning Center Online using Oauth 2.0
+Planning Center Online using Oauth 2.0 in Python
 
 Authors: see [AUTHORS](/AUTHORS).
 
