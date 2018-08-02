@@ -26,7 +26,7 @@ Skip this if you know how OAuth2 works.
    backend. *PCO* and *Foo* pre-agree on some **redirect URI**.
 2. User visits *Foo*'s login screen, e.g.
    `https://www.foo.example/login`
-3. *Foo* redirects users to *Qux*'s **Authorization URL**, e.g.
+3. *Foo* redirects users to *PCO*'s **Authorization URL**, e.g.
    `https://api.planningcenteronline.com/oauth/authorize`
 4. User is presented with *PCO*'s **consent screen**, where they
    review the **scope** of requested permissions, and either allow or
@@ -114,16 +114,10 @@ with requests.Session() as s:
 
 ## Interesting readings
 
-* Using OAuth 2.0 to Access Google APIs:
-  <https://developers.google.com/accounts/docs/OAuth2>
+* Using OAuth 2.0 to Access PCO APIs:
+  <https://developer.planning.center/docs/#/introduction/authentication>
 
-* Using OAuth 2.0 for Web Server Applications Google APIs:
-  <https://developers.google.com/accounts/docs/OAuth2WebServer>
-
-* OAuth 2.0 in Facebook:
-  <http://developers.facebook.com/docs/authentication/>
-
-* Github OAuth 2.0 usage:
-  <https://developer.github.com/apps/building-oauth-apps/>
-
+* Planning Center Online Documentation:
+  <https://developer.planning.center/docs>
+ 
 * You can use postbin for testing webhooks: <http://www.postbin.org/>
